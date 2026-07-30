@@ -261,9 +261,44 @@ const resolvePlanReport = async (req, res) => {
   }
 };
 
+/**
+ * Users with retention cards due today — consumed by Scheduler digest job.
+ * GET /internal/retention/due-summary
+ */
+const retentionDueSummary = async (req, res) => {
+  try {
+    const rows = await sequelize.query(
+      `SELECT TOP 500
+          C.USERID AS USERID,
+          COUNT(*) AS CARDCOUNT
+       FROM dbo.RETENTION_CARD C
+       INNER JOIN dbo.RETENTION_SCHEDULE S ON S.CARDID = C.CARDID
+       WHERE C.ISACTIVE = 1
+         AND S.DUEAT <= CAST(SYSUTCDATETIME() AS DATE)
+       GROUP BY C.USERID
+       ORDER BY COUNT(*) DESC`,
+      { type: QueryTypes.SELECT },
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        users: (rows || []).map((r) => ({
+          userId: r.USERID ?? r.userId,
+          cardCount: Number(r.CARDCOUNT ?? r.cardCount ?? 0) || 0,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("retentionDueSummary error:", error.message);
+    return res.status(200).json({ success: true, data: { users: [] } });
+  }
+};
+
 module.exports = {
   moderatorQueue,
   setVisibility,
   resolveReviewReport,
   resolvePlanReport,
+  retentionDueSummary,
 };
