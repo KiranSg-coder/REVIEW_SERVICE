@@ -1,10 +1,13 @@
+const { resolveUserId } = require("../lib/resolveUserContext");
+
 const extractUser = (req, res, next) => {
-  const userId = req.headers["x-user-id"];
-  if (!userId)
+  const userId = resolveUserId(req);
+  if (!userId || Number.isNaN(userId)) {
     return res
       .status(401)
       .json({ success: false, message: "Missing user context" });
-  req.userId = parseInt(userId, 10);
+  }
+  req.userId = userId;
   next();
 };
 

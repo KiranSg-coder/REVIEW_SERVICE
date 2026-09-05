@@ -8,7 +8,7 @@ const dbPort = parseInt(process.env.DB_PORT || "1433", 10);
 
 const sequelize = new Sequelize(dbName, dbUser, dbPass, {
   host: dbHost,
-  port: dbPort,
+  // port: dbPort,
   dialect: "mssql",
   logging: false,
   dialectOptions: {
