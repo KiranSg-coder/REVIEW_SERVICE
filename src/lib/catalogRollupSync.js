@@ -39,6 +39,12 @@ async function syncCreatorRollupForPlan(planId) {
       reviewCount: stats.REVIEWCOUNT ?? null,
       enrollCount: null,
       completionPercent: null,
+    }, {
+      // S5: internal call authenticates with the service key.
+      headers: process.env.INTERNAL_SERVICE_KEY
+        ? { "x-service-key": process.env.INTERNAL_SERVICE_KEY }
+        : {},
+      timeout: 10000,
     });
   } catch (err) {
     console.warn(

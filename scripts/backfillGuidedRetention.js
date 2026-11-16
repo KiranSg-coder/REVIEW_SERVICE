@@ -4,15 +4,29 @@
  * Usage (from REVIEW_SERVICE):
  *   node scripts/backfillGuidedRetention.js
  *
- * Env (optional): DB_HOST, DB_USER, DB_PASSWORD, LEARNING_DB_NAME, REVIEW_DB_NAME
+ * Env (required): DB_HOST, DB_USER, DB_PASSWORD. Optional: LEARNING_DB_NAME, REVIEW_DB_NAME,
+ *   NODE_ENV=development + DB_TRUST_SERVER_CERTIFICATE=true for a local self-signed certificate only.
  */
 const { Sequelize, QueryTypes } = require("sequelize");
 
-const host = process.env.DB_HOST || "DESKTOP-C1F49GD";
-const user = process.env.DB_USER || "auth";
-const pass = process.env.DB_PASSWORD || "1234";
+require("../src/config/loadEnv");
+
+function requireEnv(name) {
+  const v = process.env[name];
+  if (v == null || String(v).trim() === "") {
+    throw new Error(`Missing required environment variable ${name} (no credential fallbacks — S1).`);
+  }
+  return String(v);
+}
+
+const host = requireEnv("DB_HOST");
+const user = requireEnv("DB_USER");
+const pass = requireEnv("DB_PASSWORD");
 const learningDb = process.env.LEARNING_DB_NAME || "LEARNING_SERVICE";
 const reviewDb = process.env.REVIEW_DB_NAME || "REVIEW_SERVICE";
+const devTrust =
+  String(process.env.NODE_ENV || "").toLowerCase() === "development" &&
+  String(process.env.DB_TRUST_SERVER_CERTIFICATE || "").toLowerCase() === "true";
 
 function makeSequelize(database) {
   return new Sequelize(database, user, pass, {
@@ -20,7 +34,7 @@ function makeSequelize(database) {
     dialect: "mssql",
     logging: false,
     dialectOptions: {
-      options: { encrypt: true, trustServerCertificate: true },
+      options: { encrypt: true, trustServerCertificate: devTrust },
     },
   });
 }
